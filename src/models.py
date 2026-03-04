@@ -1,20 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, Any
 
 
-class ParameterDetail(BaseModel):
+class FunctionParameter(BaseModel):
     type: str
 
 
 class FunctionDefinition(BaseModel):
     name: str
     description: str
-    parameters: Dict[str, ParameterDetail]
-    returns: ParameterDetail
-
-
-class PromptTest(BaseModel):
-    prompt: str
+    parameters: Dict[str, FunctionParameter] = Field(default_factory=dict)
+    returns: Dict[str, str] = Field(default_factory=dict)
 
 
 class FunctionCallResult(BaseModel):
