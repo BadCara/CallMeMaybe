@@ -15,4 +15,12 @@ class JSONDecoder:
                                                                     {})
             self.id_to_token = {v: k for k, v in self.vocab.items()}
 
+    def _is_valid_prefix(self, prefix: str) -> bool:
+        if not prefix:
+            return True
+        
+
+    def generate_json(self, prompt: str, max_tokens: int) -> str:
+
+    
 # \x62\x69\x74\x65\x0a
