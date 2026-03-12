@@ -1,4 +1,5 @@
 import json
+import sys
 import numpy as np
 from typing import List, Any, Dict
 from llm_sdk.llm_sdk import Small_LLM_Model
@@ -8,7 +9,7 @@ class JSONDecoder:
     def __init__(self, model: Small_LLM_Model, functions: List[Any]):
         self.model = model
         self.functions = {f.name: f for f in functions}
-        vocab_path = self.model.get_path_to_vocab_file
+        vocab_path = self.model.get_path_to_tokenizer_file()
         with open(vocab_path, 'r', encoding='utf-8') as f:
             tokenizer_data: Dict[str, str] = json.load(f)
             self.vocab: Dict[str, str] = tokenizer_data.get("model",
@@ -49,13 +50,16 @@ class JSONDecoder:
         generated_text = ""
         for _ in range(max_tokens):
             logits = self.model.get_logits_from_input_ids(input_ids)
-            logits_array = np.array(logits, dtype=np.float32)
+            filtered_logits = np.full(len(logits), -np.inf, dtype=np.float32)
             for token_id, token_str in self.id_to_token.items():
                 clean_token = token_str.replace('Ġ', ' ').replace('Ċ', '\n')
                 test_string = generated_text + clean_token
-                if not self._is_valid_prefix(test_string):
-                    logits_array[token_id] = -np.inf
-            next_token_id = int(np.argmax(logits_array))
+                if self._is_valid_prefix(test_string):
+                    filtered_logits[token_id] = logits[token_id]
+            next_token_id = int(np.argmax(filtered_logits))
+            if filtered_logits[next_token_id] == -np.inf:
+                print(f"Error for promt: {prompt}", file=sys.stderr)
+                break
             next_token_str = self.id_to_token[next_token_id].replace('Ġ', ' ').replace('Ċ', '\n')
             generated_text += next_token_str
             input_ids.append(next_token_id)
